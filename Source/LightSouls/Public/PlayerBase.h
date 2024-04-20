@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/TimelineComponent.h"
+#include "InputAction.h"
+#include "InputMappingContext.h"
 #include "PlayerBase.generated.h"
 
 UCLASS()
@@ -25,12 +28,61 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+private:
+	UFUNCTION(Category = "Input Response")
+	void StartRoll();
+
+	UFUNCTION(Category = "Input Response")
+	void Walk(const FInputActionValue& IAValue);
+
+	UFUNCTION(Category = "Input Response")
+	void Look(const FInputActionValue& IAValue);
+
+	UFUNCTION()
+	void RollUpdate(const float RollForceMultiplier) const;
+
+	UFUNCTION()
+	void RollFinished();
+
 public:
 
 protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	TSoftObjectPtr<UInputMappingContext> InputMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IAWalk;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IALook;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IARoll;
+
 	UPROPERTY(EditDefaultsOnly)
 	class UCameraComponent* Camera;
 
 	UPROPERTY(EditDefaultsOnly)
 	class USpringArmComponent* SpringArm;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* RollAnimMontage;
+
+	UPROPERTY(EditDefaultsOnly)
+	float RollAnimPlayRate = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Roll")
+	float RollForce = 400.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Roll")
+	UCurveFloat* RollForceCurve;
+
+private:
+	bool bInRoll = false;
+	FVector2D MoveVector;
+	FVector RollDirection;
+	FOnTimelineFloat RollInterp;
+	FOnTimelineEvent RollFinishedEvent;
+
+	UTimelineComponent* RollTimeline;
 };
