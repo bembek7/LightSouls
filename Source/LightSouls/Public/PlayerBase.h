@@ -24,11 +24,21 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	float GetCurrentStamina() const;
+	float GetMaxStamina() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 private:
+	UFUNCTION()
+	void RegenerateStamina();
+
+	bool HasEnoughStamina(const float StaminaCost) const;
+
+	void PayStamina(const float StaminaCost);
+
 	UFUNCTION(Category = "Input Response")
 	void StartRoll();
 
@@ -81,8 +91,15 @@ private:
 	bool bInRoll = false;
 	FVector2D MoveVector;
 	FVector RollDirection;
+
+	float MaxStamina = 100.f;
+	float CurrentStamina;
+	float RollStaminaCost = 30.f;
+	float StaminaRegenerationPerSecond = 30.f;
+
 	FOnTimelineFloat RollInterp;
 	FOnTimelineEvent RollFinishedEvent;
+	FTimerHandle StaminaRegenerationHandle;
 
 	UTimelineComponent* RollTimeline;
 };

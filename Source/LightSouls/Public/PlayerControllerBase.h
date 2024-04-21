@@ -17,12 +17,15 @@ class LIGHTSOULS_API APlayerControllerBase : public APlayerController
 public:
 
 protected:
-
+	virtual void BeginPlay() override;
 private:
 
 public:
 
 protected:
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget>HudWidgetClass;
 
 private:
+	UUserWidget* HudWidget;
 };

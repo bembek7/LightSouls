@@ -27,6 +27,8 @@ APlayerBase::APlayerBase()
 	RollTimeline = CreateDefaultSubobject<UTimelineComponent>(FName("RollTimeline"));
 	RollInterp.BindUFunction(this, FName("RollUpdate"));
 	RollFinishedEvent.BindUFunction(this, FName("RollFinished"));
+
+	CurrentStamina = MaxStamina;
 }
 
 // Called when the game starts or when spawned
@@ -39,6 +41,10 @@ void APlayerBase::BeginPlay()
 		RollTimeline->AddInterpFloat(RollForceCurve, RollInterp, FName("Force"), FName("ForceTrack"));
 	}
 	RollTimeline->SetTimelineFinishedFunc(RollFinishedEvent);
+
+	FTimerDelegate StaminaRegenerationDelegate;
+	StaminaRegenerationDelegate.BindUFunction(this, FName("RegenerateStamina"));
+	GetWorldTimerManager().SetTimer(StaminaRegenerationHandle, StaminaRegenerationDelegate, 0.1f, true);
 }
 
 // Called every frame
@@ -83,6 +89,16 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	}
 }
 
+float APlayerBase::GetCurrentStamina() const
+{
+	return CurrentStamina;
+}
+
+float APlayerBase::GetMaxStamina() const
+{
+	return MaxStamina;
+}
+
 void APlayerBase::Walk(const FInputActionValue& IAValue)
 {
 	if (!bInRoll)
@@ -103,10 +119,31 @@ void APlayerBase::Look(const FInputActionValue& IAValue)
 	AddControllerPitchInput(LookVector.Y * 1 * -1);
 }
 
-void APlayerBase::StartRoll()
+void APlayerBase::RegenerateStamina()
 {
 	if (!bInRoll)
 	{
+		CurrentStamina += StaminaRegenerationPerSecond / 10;
+		CurrentStamina = FMath::Min(CurrentStamina, MaxStamina);
+	}
+}
+
+bool APlayerBase::HasEnoughStamina(const float StaminaCost) const
+{
+	return CurrentStamina >= StaminaCost;
+}
+
+void APlayerBase::PayStamina(const float StaminaCost)
+{
+	CurrentStamina -= StaminaCost;
+	CurrentStamina = FMath::Max(CurrentStamina, 0);
+}
+
+void APlayerBase::StartRoll()
+{
+	if (!bInRoll && HasEnoughStamina(RollStaminaCost))
+	{
+		PayStamina(RollStaminaCost);
 		bInRoll = true;
 		const float AnimLength = PlayAnimMontage(RollAnimMontage, RollAnimPlayRate) / RollAnimPlayRate;
 		GetCharacterMovement()->StopMovementImmediately();
@@ -126,8 +163,6 @@ void APlayerBase::RollUpdate(const float RollForceMultiplier) const
 
 void APlayerBase::RollFinished()
 {
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("Roll finished!"));
 	GetCharacterMovement()->StopMovementImmediately();
 	bInRoll = false;
 }
