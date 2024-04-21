@@ -113,7 +113,7 @@ void APlayerBase::StartRoll()
 
 		RollDirection = Camera->GetRightVector() * MoveVector.X + FVector::CrossProduct(Camera->GetRightVector(), FVector::ZAxisVector) * MoveVector.Y;
 
-		RollTimeline->SetTimelineLength(AnimLength - 0.14f);
+		RollTimeline->SetTimelineLength(AnimLength - 0.1f);
 		RollTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_TimelineLength);
 		RollTimeline->PlayFromStart();
 	}
@@ -126,5 +126,8 @@ void APlayerBase::RollUpdate(const float RollForceMultiplier) const
 
 void APlayerBase::RollFinished()
 {
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, TEXT("Roll finished!"));
+	GetCharacterMovement()->StopMovementImmediately();
 	bInRoll = false;
 }
