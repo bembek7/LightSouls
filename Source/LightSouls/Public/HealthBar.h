@@ -4,25 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "HUDWidget.generated.h"
+#include "HealthBar.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class LIGHTSOULS_API UHUDWidget : public UUserWidget
+class LIGHTSOULS_API UHealthBar : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	virtual void NativeConstruct() override;
+	void SetOwner(APawn* const NewOwner);
 
 protected:
 	UFUNCTION(BlueprintPure)
-	float CalculateStaminaPercent() const;
-private:
+	float CalculateHealthPercent() const;
 
 protected:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
-	class UProgressBar* StaminaBar;
+	class UProgressBar* HealthBar;
+
+private:
+	APawn* Owner;
 };
