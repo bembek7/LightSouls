@@ -5,6 +5,7 @@
 #include "Components/WidgetComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "HealthBar.h"
+#include "Particles\ParticleSystemComponent.h"
 
 // Sets default values
 AEnemyBase::AEnemyBase()
@@ -33,6 +34,11 @@ void AEnemyBase::BeginPlay()
 	}
 }
 
+void AEnemyBase::Die()
+{
+
+}
+
 // Called every frame
 void AEnemyBase::Tick(float DeltaTime)
 {
@@ -49,3 +55,27 @@ float AEnemyBase::GetMaxHealth() const
 	return MaxHealth;
 }
 
+void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
+{
+	CurrentHealth -= Damage;
+	if (CurrentHealth <= 0)
+	{
+		Die();
+	}
+	AActor* BloodVFX = GetWorld()->SpawnActor<AActor>(OnHitParticleEffectClass.Get(), FTransform(GetActorLocation()));
+	if (BloodVFX)
+	{
+		USceneComponent* VFXComponent = Cast<USceneComponent>(BloodVFX->GetComponentByClass(UParticleSystemComponent::StaticClass()));
+		if (VFXComponent)
+		{
+			FVector HitDirection = GetActorLocation() - HitterLocation;
+			HitDirection.Normalize();
+			FRotator BloodRotation = HitDirection.Rotation();
+			BloodRotation.Pitch += 90; // VFX is facing up by default so we have to tweak it to be facing forward
+			VFXComponent->SetWorldRotation(BloodRotation);
+			VFXComponent->Activate();
+
+			// TODO Destroy blood
+		}
+	}
+}

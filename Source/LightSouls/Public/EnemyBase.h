@@ -18,9 +18,14 @@ public:
 	float GetCurrentHealth() const;
 	float GetMaxHealth() const;
 
+	void Damage(const float Damage, const FVector& HitterLocation);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+private:
+	void Die();
 
 public:	
 	// Called every frame
@@ -29,6 +34,9 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget>HealthBarWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor>OnHitParticleEffectClass;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UWidgetComponent* HealthBarInWorld;

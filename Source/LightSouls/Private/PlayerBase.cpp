@@ -8,6 +8,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnemyBase.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 APlayerBase::APlayerBase()
@@ -24,9 +27,12 @@ APlayerBase::APlayerBase()
 	Camera->SetupAttachment(SpringArm);
 	Camera->bUsePawnControlRotation = true;
 
-	RollTimeline = CreateDefaultSubobject<UTimelineComponent>(FName("RollTimeline"));
+	RollTimeline = CreateDefaultSubobject<UTimelineComponent>(FName("Roll Timeline"));
 	RollInterp.BindUFunction(this, FName("RollUpdate"));
 	RollFinishedEvent.BindUFunction(this, FName("RollFinished"));
+
+	SwordCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("Sword"));
+	SwordCollider->SetupAttachment(GetMesh(), FName("SwordJoint"));
 
 	CurrentStamina = MaxStamina;
 }
@@ -45,6 +51,13 @@ void APlayerBase::BeginPlay()
 	FTimerDelegate StaminaRegenerationDelegate;
 	StaminaRegenerationDelegate.BindUFunction(this, FName("RegenerateStamina"));
 	GetWorldTimerManager().SetTimer(StaminaRegenerationHandle, StaminaRegenerationDelegate, 0.1f, true);
+
+	FScriptDelegate OnSwordHitDelegate;
+	OnSwordHitDelegate.BindUFunction(this, FName("OnSwordHit"));
+	if(SwordCollider)
+	{
+		SwordCollider->OnComponentBeginOverlap.AddUnique(OnSwordHitDelegate);
+	}
 }
 
 // Called every frame
@@ -86,6 +99,10 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		{
 			PlayerEnhancedInputComponent->BindAction(IARoll, ETriggerEvent::Started, this, &APlayerBase::StartRoll);
 		}
+		if (IARoll)
+		{
+			PlayerEnhancedInputComponent->BindAction(IALightAttack, ETriggerEvent::Started, this, &APlayerBase::StartLightAttack);
+		}
 	}
 }
 
@@ -101,7 +118,7 @@ float APlayerBase::GetMaxStamina() const
 
 void APlayerBase::Walk(const FInputActionValue& IAValue)
 {
-	if (!bInRoll)
+	if (!IsInputBlocked())
 	{
 		MoveVector = IAValue.Get<FVector2D>();
 		if (Camera)
@@ -121,7 +138,7 @@ void APlayerBase::Look(const FInputActionValue& IAValue)
 
 void APlayerBase::RegenerateStamina()
 {
-	if (!bInRoll)
+	if (!IsInputBlocked())
 	{
 		CurrentStamina += StaminaRegenerationPerSecond / 10;
 		CurrentStamina = FMath::Min(CurrentStamina, MaxStamina);
@@ -141,7 +158,7 @@ void APlayerBase::PayStamina(const float StaminaCost)
 
 void APlayerBase::StartRoll()
 {
-	if (!bInRoll && HasEnoughStamina(RollStaminaCost))
+	if (!IsInputBlocked() && HasEnoughStamina(RollStaminaCost))
 	{
 		PayStamina(RollStaminaCost);
 		bInRoll = true;
@@ -156,6 +173,24 @@ void APlayerBase::StartRoll()
 	}
 }
 
+void APlayerBase::StartLightAttack()
+{
+	if (!IsInputBlocked() && HasEnoughStamina(LightAttackStaminaCost))
+	{
+		PayStamina(LightAttackStaminaCost);
+
+		bInAttack = true;
+		EnemiesHit.Empty();
+
+		const float AnimLength = PlayAnimMontage(LightAttackAnimMontage);
+		GetCharacterMovement()->StopMovementImmediately();
+
+		FTimerDelegate AttackDelegate;
+		AttackDelegate.BindUFunction(this, FName("AttackFinished"));
+		GetWorldTimerManager().SetTimer(AttackHandle, AttackDelegate, AnimLength, false);
+	}
+}
+
 void APlayerBase::RollUpdate(const float RollForceMultiplier) const
 {
 	GetCharacterMovement()->AddInputVector(RollDirection * RollForceMultiplier, true);
@@ -165,4 +200,29 @@ void APlayerBase::RollFinished()
 {
 	GetCharacterMovement()->StopMovementImmediately();
 	bInRoll = false;
+}
+
+void APlayerBase::AttackFinished()
+{
+	bInAttack = false;
+}
+
+bool APlayerBase::IsInputBlocked() const
+{
+	return bInAttack || bInRoll;
+}
+
+void APlayerBase::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp)
+{
+	if(bInAttack)
+	{
+		if (AEnemyBase* const EnemyHit = Cast<AEnemyBase>(OtherActor))
+		{
+			if(!EnemiesHit.Contains(EnemyHit))
+			{
+				EnemyHit->Damage(LightAttackDamage, GetActorLocation());
+				EnemiesHit.Add(EnemyHit);
+			}
+		}
+	}
 }

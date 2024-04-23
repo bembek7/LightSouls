@@ -43,6 +43,9 @@ private:
 	void StartRoll();
 
 	UFUNCTION(Category = "Input Response")
+	void StartLightAttack();
+
+	UFUNCTION(Category = "Input Response")
 	void Walk(const FInputActionValue& IAValue);
 
 	UFUNCTION(Category = "Input Response")
@@ -53,6 +56,14 @@ private:
 
 	UFUNCTION()
 	void RollFinished();
+
+	UFUNCTION()
+	void AttackFinished();
+
+	bool IsInputBlocked() const;
+
+	UFUNCTION()
+	void OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp);
 
 public:
 
@@ -69,6 +80,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
 	UInputAction* IARoll;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IALightAttack;
+
 	UPROPERTY(EditDefaultsOnly)
 	class UCameraComponent* Camera;
 
@@ -76,7 +90,13 @@ protected:
 	class USpringArmComponent* SpringArm;
 
 	UPROPERTY(EditDefaultsOnly)
+	class UBoxComponent* SwordCollider;
+
+	UPROPERTY(EditDefaultsOnly)
 	UAnimMontage* RollAnimMontage;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* LightAttackAnimMontage;
 
 	UPROPERTY(EditDefaultsOnly)
 	float RollAnimPlayRate = 1.5f;
@@ -89,17 +109,24 @@ protected:
 
 private:
 	bool bInRoll = false;
+	bool bInAttack = false;
 	FVector2D MoveVector;
 	FVector RollDirection;
 
 	float MaxStamina = 100.f;
 	float CurrentStamina;
 	float RollStaminaCost = 30.f;
+
 	float StaminaRegenerationPerSecond = 30.f;
+
+	float LightAttackStaminaCost = 25.f;
+	float LightAttackDamage = 30.f;
+	TArray<AActor*>EnemiesHit;
 
 	FOnTimelineFloat RollInterp;
 	FOnTimelineEvent RollFinishedEvent;
 	FTimerHandle StaminaRegenerationHandle;
+	FTimerHandle AttackHandle;
 
 	UTimelineComponent* RollTimeline;
 };
