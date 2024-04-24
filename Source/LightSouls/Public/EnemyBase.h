@@ -26,6 +26,7 @@ protected:
 
 private:
 	void Die();
+	void SpawnBlood(const FVector& HitterLocation);
 
 public:	
 	// Called every frame
@@ -41,8 +42,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	class UWidgetComponent* HealthBarInWorld;
 
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* HitImpactAnimMontage;
+
 private:
 	float MaxHealth = 100.f;
 	float CurrentHealth;
-
 };

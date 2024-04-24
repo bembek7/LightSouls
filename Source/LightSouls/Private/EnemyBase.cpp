@@ -34,11 +34,6 @@ void AEnemyBase::BeginPlay()
 	}
 }
 
-void AEnemyBase::Die()
-{
-
-}
-
 // Called every frame
 void AEnemyBase::Tick(float DeltaTime)
 {
@@ -62,6 +57,13 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 	{
 		Die();
 	}
+	PlayAnimMontage(HitImpactAnimMontage);
+
+	SpawnBlood(HitterLocation);
+}
+
+void AEnemyBase::SpawnBlood(const FVector& HitterLocation)
+{
 	AActor* BloodVFX = GetWorld()->SpawnActor<AActor>(OnHitParticleEffectClass.Get(), FTransform(GetActorLocation()));
 	if (BloodVFX)
 	{
@@ -75,7 +77,13 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 			VFXComponent->SetWorldRotation(BloodRotation);
 			VFXComponent->Activate();
 
-			// TODO Destroy blood
+			FTimerHandle BloodDestructionHandle;
+			GetWorldTimerManager().SetTimer(BloodDestructionHandle, [BloodVFX]() {BloodVFX->Destroy();}, 1.f, false);
 		}
 	}
+}
+
+void AEnemyBase::Die()
+{
+
 }

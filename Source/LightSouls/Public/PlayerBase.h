@@ -126,7 +126,6 @@ private:
 	FOnTimelineFloat RollInterp;
 	FOnTimelineEvent RollFinishedEvent;
 	FTimerHandle StaminaRegenerationHandle;
-	FTimerHandle AttackHandle;
 
 	UTimelineComponent* RollTimeline;
 };

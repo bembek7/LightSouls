@@ -33,6 +33,11 @@ APlayerBase::APlayerBase()
 
 	SwordCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("Sword"));
 	SwordCollider->SetupAttachment(GetMesh(), FName("SwordJoint"));
+	SwordCollider->SetGenerateOverlapEvents(true);
+	SwordCollider->SetCollisionProfileName(FName("OverlapAll"));
+	SwordCollider->SetRelativeLocation(FVector(46, -20, 5));
+	SwordCollider->SetRelativeRotation(FRotator(4, -14, 0.2));
+	SwordCollider->SetBoxExtent(FVector(35, 3, 1));
 
 	CurrentStamina = MaxStamina;
 }
@@ -187,6 +192,7 @@ void APlayerBase::StartLightAttack()
 
 		FTimerDelegate AttackDelegate;
 		AttackDelegate.BindUFunction(this, FName("AttackFinished"));
+		FTimerHandle AttackHandle;
 		GetWorldTimerManager().SetTimer(AttackHandle, AttackDelegate, AnimLength, false);
 	}
 }
