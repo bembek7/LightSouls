@@ -57,7 +57,14 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 	{
 		Die();
 	}
-	PlayAnimMontage(HitImpactAnimMontage);
+	else
+	{
+		if(HitImpactAnimMontage)
+		{
+			PlayAnimMontage(HitImpactAnimMontage);
+		}
+	}
+	
 
 	SpawnBlood(HitterLocation);
 }
@@ -85,5 +92,11 @@ void AEnemyBase::SpawnBlood(const FVector& HitterLocation)
 
 void AEnemyBase::Die()
 {
-
+	bIsDead = true;
+	if(DeathAnimMontage)
+	{
+		PlayAnimMontage(DeathAnimMontage);
+	}
+	FTimerHandle DeathHandle;
+	GetWorldTimerManager().SetTimer(DeathHandle, [this]() {Destroy(); }, 5.f, false);
 }

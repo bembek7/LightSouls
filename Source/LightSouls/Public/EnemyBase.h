@@ -45,7 +45,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	UAnimMontage* HitImpactAnimMontage;
 
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* DeathAnimMontage;
+
 private:
+	bool bIsDead = false;
 	float MaxHealth = 100.f;
 	float CurrentHealth;
 };
