@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "EnemyBase.h"
 #include "Components/WidgetComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,7 +9,7 @@
 // Sets default values
 AEnemyBase::AEnemyBase()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	CurrentHealth = MaxHealth;
@@ -59,12 +58,11 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 	}
 	else
 	{
-		if(HitImpactAnimMontage)
+		if (HitImpactAnimMontage)
 		{
 			PlayAnimMontage(HitImpactAnimMontage);
 		}
 	}
-	
 
 	SpawnBlood(HitterLocation);
 }
@@ -85,7 +83,7 @@ void AEnemyBase::SpawnBlood(const FVector& HitterLocation)
 			VFXComponent->Activate();
 
 			FTimerHandle BloodDestructionHandle;
-			GetWorldTimerManager().SetTimer(BloodDestructionHandle, [BloodVFX]() {BloodVFX->Destroy();}, 1.f, false);
+			GetWorldTimerManager().SetTimer(BloodDestructionHandle, [BloodVFX]() {BloodVFX->Destroy(); }, 1.f, false);
 		}
 	}
 }
@@ -93,7 +91,8 @@ void AEnemyBase::SpawnBlood(const FVector& HitterLocation)
 void AEnemyBase::Die()
 {
 	bIsDead = true;
-	if(DeathAnimMontage)
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (DeathAnimMontage)
 	{
 		PlayAnimMontage(DeathAnimMontage);
 	}
