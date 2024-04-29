@@ -11,6 +11,7 @@
 #include "EnemyBase.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 APlayerBase::APlayerBase()
@@ -59,7 +60,7 @@ void APlayerBase::BeginPlay()
 
 	FScriptDelegate OnSwordHitDelegate;
 	OnSwordHitDelegate.BindUFunction(this, FName("OnSwordHit"));
-	if(SwordCollider)
+	if (SwordCollider)
 	{
 		SwordCollider->OnComponentBeginOverlap.AddUnique(OnSwordHitDelegate);
 	}
@@ -69,6 +70,10 @@ void APlayerBase::BeginPlay()
 void APlayerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (LockedTarget)
+	{
+		
+	}
 }
 
 // Called to bind functionality to input
@@ -108,6 +113,10 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		{
 			PlayerEnhancedInputComponent->BindAction(IALightAttack, ETriggerEvent::Started, this, &APlayerBase::StartLightAttack);
 		}
+		if (IALockCamera)
+		{
+			PlayerEnhancedInputComponent->BindAction(IALockCamera, ETriggerEvent::Started, this, &APlayerBase::LockCamera);
+		}
 	}
 }
 
@@ -136,9 +145,12 @@ void APlayerBase::Walk(const FInputActionValue& IAValue)
 
 void APlayerBase::Look(const FInputActionValue& IAValue)
 {
-	const FVector2D LookVector = IAValue.Get<FVector2D>();
-	AddControllerYawInput(LookVector.X * 1);
-	AddControllerPitchInput(LookVector.Y * 1 * -1);
+	if(!LockedTarget)
+	{
+		const FVector2D LookVector = IAValue.Get<FVector2D>();
+		AddControllerYawInput(LookVector.X * 1);
+		AddControllerPitchInput(LookVector.Y * 1 * -1);
+	}
 }
 
 void APlayerBase::RegenerateStamina()
@@ -213,6 +225,65 @@ void APlayerBase::AttackFinished()
 	bInAttack = false;
 }
 
+void APlayerBase::LockCamera()
+{
+	if (LockedTarget && Camera)
+	{
+		LockedTarget = nullptr;
+		Camera->bUsePawnControlRotation = true;
+	}
+	else
+	{
+		AActor* const FoundTarget = EstablishTargetToLockOn();
+		if (FoundTarget && Camera)
+		{
+			LockedTarget = FoundTarget;
+			Camera->bUsePawnControlRotation = false;
+			FRotator a = UKismetMathLibrary::FindLookAtRotation(Camera->GetComponentLocation(), LockedTarget->GetActorLocation());
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("%s"), *a.ToString()));
+			Camera->SetWorldRotation(a);
+			// a moze spring arm zmienic y rotaxdyjny na stala sensowna;
+		}
+	}
+}
+
+AActor* APlayerBase::EstablishTargetToLockOn()
+{
+	return FindEnemyLookedAt();
+}
+
+AActor* APlayerBase::FindEnemyLookedAt()
+{
+	TArray<FHitResult> HitResults;
+	TArray<AActor*> IgnoredActors;
+	IgnoredActors.Add(this);
+	const FVector CameraForward = Camera->GetForwardVector();
+	const FVector CameraLocation = Camera->GetComponentLocation();
+	const FVector BoxShape = FVector(1, 300, 300);
+	UKismetSystemLibrary::BoxTraceMulti(GetWorld(), CameraLocation,
+		CameraLocation + 3000 * CameraForward, BoxShape, Camera->GetComponentRotation(),
+		UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Camera), false, IgnoredActors, 
+		EDrawDebugTrace::ForDuration, HitResults, true);
+	AActor* ClosestToCameraDirectionEnemy = nullptr;
+	double BestDotWithCameraForward = 0.f;
+	for (const auto& HitResult : HitResults)
+	{
+		if(APawn* FoundEnemy = Cast<APawn>(HitResult.GetActor()))
+		{
+			FVector EnemyDirection = FoundEnemy->GetActorLocation() - CameraLocation;
+			EnemyDirection.Normalize();
+			const double DotToCamera = FVector::DotProduct(CameraForward, EnemyDirection);
+			if (DotToCamera > BestDotWithCameraForward)
+			{
+				BestDotWithCameraForward = DotToCamera;
+				ClosestToCameraDirectionEnemy = FoundEnemy;
+			}
+		}
+	}
+	return ClosestToCameraDirectionEnemy;
+}
+
 bool APlayerBase::IsInputBlocked() const
 {
 	return bInAttack || bInRoll;
@@ -220,11 +291,11 @@ bool APlayerBase::IsInputBlocked() const
 
 void APlayerBase::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp)
 {
-	if(bInAttack)
+	if (bInAttack)
 	{
 		if (AEnemyBase* const EnemyHit = Cast<AEnemyBase>(OtherActor))
 		{
-			if(!EnemiesHit.Contains(EnemyHit))
+			if (!EnemiesHit.Contains(EnemyHit))
 			{
 				EnemyHit->Damage(LightAttackDamage, GetActorLocation());
 				EnemiesHit.Add(EnemyHit);

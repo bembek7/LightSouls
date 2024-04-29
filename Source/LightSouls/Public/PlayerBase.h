@@ -60,6 +60,13 @@ private:
 	UFUNCTION()
 	void AttackFinished();
 
+	UFUNCTION()
+	void LockCamera();
+
+	AActor* EstablishTargetToLockOn();
+
+	AActor* FindEnemyLookedAt();
+
 	bool IsInputBlocked() const;
 
 	UFUNCTION()
@@ -82,6 +89,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
 	UInputAction* IALightAttack;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IALockCamera;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UCameraComponent* Camera;
@@ -112,6 +122,8 @@ private:
 	bool bInAttack = false;
 	FVector2D MoveVector;
 	FVector RollDirection;
+
+	AActor* LockedTarget = nullptr;
 
 	float MaxStamina = 100.f;
 	float CurrentStamina;
