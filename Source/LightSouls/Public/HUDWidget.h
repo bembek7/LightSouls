@@ -7,7 +7,7 @@
 #include "HUDWidget.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class LIGHTSOULS_API UHUDWidget : public UUserWidget

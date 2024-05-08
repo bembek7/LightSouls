@@ -7,7 +7,7 @@
 #include "HealthBar.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class LIGHTSOULS_API UHealthBar : public UUserWidget
