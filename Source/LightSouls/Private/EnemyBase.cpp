@@ -5,6 +5,8 @@
 #include "Components/CapsuleComponent.h"
 #include "HealthBar.h"
 #include "Particles\ParticleSystemComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "PlayerBase.h"
 
 // Sets default values
 AEnemyBase::AEnemyBase()
@@ -67,6 +69,11 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 	SpawnBlood(HitterLocation);
 }
 
+bool AEnemyBase::IsDead() const
+{
+	return bIsDead;
+}
+
 void AEnemyBase::SpawnBlood(const FVector& HitterLocation)
 {
 	AActor* BloodVFX = GetWorld()->SpawnActor<AActor>(OnHitParticleEffectClass.Get(), FTransform(GetActorLocation()));
@@ -92,9 +99,14 @@ void AEnemyBase::Die()
 {
 	bIsDead = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 	if (DeathAnimMontage)
 	{
 		PlayAnimMontage(DeathAnimMontage);
+	}
+	if(APlayerBase* const PlayerPawn = Cast<APlayerBase>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
+	{
+		PlayerPawn->EnemyDied(this);
 	}
 	FTimerHandle DeathHandle;
 	GetWorldTimerManager().SetTimer(DeathHandle, [this]() {Destroy(); }, 5.f, false);

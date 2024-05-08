@@ -113,7 +113,7 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		}
 		if (IALockCamera)
 		{
-			PlayerEnhancedInputComponent->BindAction(IALockCamera, ETriggerEvent::Started, this, &APlayerBase::LockCamera);
+			PlayerEnhancedInputComponent->BindAction(IALockCamera, ETriggerEvent::Started, this, &APlayerBase::LockCameraInputResponse);
 		}
 	}
 }
@@ -126,6 +126,21 @@ float APlayerBase::GetCurrentStamina() const
 float APlayerBase::GetMaxStamina() const
 {
 	return MaxStamina;
+}
+
+void APlayerBase::EnemyDied(AActor* const DeadEnemy)
+{
+	if (LockedTarget && DeadEnemy && LockedTarget == DeadEnemy)
+	{
+		if (AActor* const ClosestEnemy = GetClosestEnemy())
+		{
+			LockedTarget = ClosestEnemy;
+		}
+		else
+		{
+			UnlockCamera();
+		}
+	}
 }
 
 void APlayerBase::Walk(const FInputActionValue& IAValue)
@@ -223,9 +238,21 @@ void APlayerBase::AttackFinished()
 	bInAttack = false;
 }
 
-void APlayerBase::LockCamera()
+void APlayerBase::LockCameraInputResponse()
 {
-	if (LockedTarget && Camera)
+	if (LockedTarget)
+	{
+		UnlockCamera();
+	}
+	else
+	{
+		LockCamera();
+	}
+}
+
+void APlayerBase::UnlockCamera()
+{
+	if (SpringArm && Camera)
 	{
 		LockedTarget = nullptr;
 		SpringArm->bUsePawnControlRotation = true;
@@ -234,20 +261,21 @@ void APlayerBase::LockCamera()
 		SpringArm->bInheritYaw = true;
 		Camera->bUsePawnControlRotation = true;
 	}
-	else
-	{
-		AActor* const FoundTarget = EstablishTargetToLockOn();
-		if (FoundTarget && Camera && SpringArm)
-		{
-			LockedTarget = FoundTarget;
+}
 
-			SpringArm->bUsePawnControlRotation = false;
-			SpringArm->bInheritPitch = false;
-			SpringArm->bInheritRoll = false;
-			SpringArm->bInheritYaw = false;
-			Camera->bUsePawnControlRotation = false;
-			Camera->AddRelativeRotation(FRotator(10, 0, 0));
-		}
+void APlayerBase::LockCamera()
+{
+	AActor* const FoundTarget = EstablishTargetToLockOn();
+	if (FoundTarget && Camera && SpringArm)
+	{
+		LockedTarget = FoundTarget;
+
+		SpringArm->bUsePawnControlRotation = false;
+		SpringArm->bInheritPitch = false;
+		SpringArm->bInheritRoll = false;
+		SpringArm->bInheritYaw = false;
+		Camera->bUsePawnControlRotation = false;
+		Camera->AddRelativeRotation(FRotator(10, 0, 0));
 	}
 }
 
@@ -320,8 +348,14 @@ AActor* APlayerBase::GetClosestEnemy() const
 			const float DistanceToEnemy = FVector::Distance(GetActorLocation(), Enemy->GetActorLocation());
 			if (DistanceToEnemy < SearchedDistance && DistanceToEnemy < CurrentShortestDistance)
 			{
-				CurrentShortestDistance = DistanceToEnemy;
-				ClosestEnemy = Enemy;
+				if (AEnemyBase* const CastedEnemy = Cast<AEnemyBase>(Enemy))
+				{
+					if (!CastedEnemy->IsDead())
+					{
+						CurrentShortestDistance = DistanceToEnemy;
+						ClosestEnemy = Enemy;
+					}
+				}
 			}
 		}
 		return ClosestEnemy;

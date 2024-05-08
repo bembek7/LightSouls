@@ -27,6 +27,8 @@ public:
 	float GetCurrentStamina() const;
 	float GetMaxStamina() const;
 
+	void EnemyDied(AActor* const DeadEnemy);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -61,6 +63,10 @@ private:
 	void AttackFinished();
 
 	UFUNCTION()
+	void LockCameraInputResponse();
+
+	void UnlockCamera();
+
 	void LockCamera();
 
 	AActor* EstablishTargetToLockOn();

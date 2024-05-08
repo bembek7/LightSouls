@@ -20,6 +20,8 @@ public:
 
 	void Damage(const float Damage, const FVector& HitterLocation);
 
+	bool IsDead() const;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,7 +30,7 @@ private:
 	void Die();
 	void SpawnBlood(const FVector& HitterLocation);
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
