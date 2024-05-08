@@ -67,6 +67,8 @@ private:
 
 	AActor* FindEnemyLookedAt();
 
+	AActor* GetClosestEnemy() const;
+
 	bool IsInputBlocked() const;
 
 	UFUNCTION()
@@ -118,6 +120,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Roll")
 	UCurveFloat* RollForceCurve;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor>EnemyClass;
 
 private:
 	bool bInRoll = false;

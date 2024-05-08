@@ -12,6 +12,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 APlayerBase::APlayerBase()
@@ -262,7 +263,15 @@ void APlayerBase::SnapCameraToTarget()
 
 AActor* APlayerBase::EstablishTargetToLockOn()
 {
-	return FindEnemyLookedAt();
+	AActor* FoundTarget = FindEnemyLookedAt();
+	if (FoundTarget)
+	{
+		return FoundTarget;
+	}
+	else
+	{
+		return GetClosestEnemy();
+	}
 }
 
 AActor* APlayerBase::FindEnemyLookedAt()
@@ -294,6 +303,30 @@ AActor* APlayerBase::FindEnemyLookedAt()
 		}
 	}
 	return ClosestToCameraDirectionEnemy;
+}
+
+AActor* APlayerBase::GetClosestEnemy() const
+{
+	if (EnemyClass)
+	{
+		const float SearchedDistance = 1500.f;
+		float CurrentShortestDistance = SearchedDistance;
+		AActor* ClosestEnemy = nullptr;
+		TArray<AActor*> FoundEnemies;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), EnemyClass, FoundEnemies);
+
+		for (const auto Enemy : FoundEnemies)
+		{
+			const float DistanceToEnemy = FVector::Distance(GetActorLocation(), Enemy->GetActorLocation());
+			if (DistanceToEnemy < SearchedDistance && DistanceToEnemy < CurrentShortestDistance)
+			{
+				CurrentShortestDistance = DistanceToEnemy;
+				ClosestEnemy = Enemy;
+			}
+		}
+		return ClosestEnemy;
+	}
+	return nullptr;
 }
 
 bool APlayerBase::IsInputBlocked() const
