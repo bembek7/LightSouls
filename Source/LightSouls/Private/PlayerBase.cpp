@@ -20,7 +20,7 @@ APlayerBase::APlayerBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-	SpringArm->SetupAttachment(GetRootComponent());
+	SpringArm->SetupAttachment(GetCapsuleComponent());
 	SpringArm->bDoCollisionTest = true;
 	SpringArm->bUsePawnControlRotation = true;
 
@@ -43,7 +43,6 @@ APlayerBase::APlayerBase()
 	CurrentStamina = MaxStamina;
 }
 
-// Called when the game starts or when spawned
 void APlayerBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -66,17 +65,15 @@ void APlayerBase::BeginPlay()
 	}
 }
 
-// Called every frame
 void APlayerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (LockedTarget)
 	{
-		
+		SnapCameraToTarget();
 	}
 }
 
-// Called to bind functionality to input
 void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -145,7 +142,7 @@ void APlayerBase::Walk(const FInputActionValue& IAValue)
 
 void APlayerBase::Look(const FInputActionValue& IAValue)
 {
-	if(!LockedTarget)
+	if (!LockedTarget)
 	{
 		const FVector2D LookVector = IAValue.Get<FVector2D>();
 		AddControllerYawInput(LookVector.X * 1);
@@ -230,21 +227,36 @@ void APlayerBase::LockCamera()
 	if (LockedTarget && Camera)
 	{
 		LockedTarget = nullptr;
+		SpringArm->bUsePawnControlRotation = true;
+		SpringArm->bInheritPitch = true;
+		SpringArm->bInheritRoll = true;
+		SpringArm->bInheritYaw = true;
 		Camera->bUsePawnControlRotation = true;
 	}
 	else
 	{
 		AActor* const FoundTarget = EstablishTargetToLockOn();
-		if (FoundTarget && Camera)
+		if (FoundTarget && Camera && SpringArm)
 		{
 			LockedTarget = FoundTarget;
+
+			SpringArm->bUsePawnControlRotation = false;
+			SpringArm->bInheritPitch = false;
+			SpringArm->bInheritRoll = false;
+			SpringArm->bInheritYaw = false;
 			Camera->bUsePawnControlRotation = false;
-			FRotator a = UKismetMathLibrary::FindLookAtRotation(Camera->GetComponentLocation(), LockedTarget->GetActorLocation());
-			if (GEngine)
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("%s"), *a.ToString()));
-			Camera->SetWorldRotation(a);
-			// a moze spring arm zmienic y rotaxdyjny na stala sensowna;
+			Camera->AddRelativeRotation(FRotator(10, 0, 0));
 		}
+	}
+}
+
+void APlayerBase::SnapCameraToTarget()
+{
+	if (LockedTarget && Camera && SpringArm)
+	{
+		FRotator RotationToLookAtTarget = UKismetMathLibrary::FindLookAtRotation(SpringArm->GetComponentLocation(), LockedTarget->GetActorLocation());
+		RotationToLookAtTarget.Pitch -= 30;
+		SpringArm->SetRelativeRotation(RotationToLookAtTarget);
 	}
 }
 
@@ -263,13 +275,13 @@ AActor* APlayerBase::FindEnemyLookedAt()
 	const FVector BoxShape = FVector(1, 300, 300);
 	UKismetSystemLibrary::BoxTraceMulti(GetWorld(), CameraLocation,
 		CameraLocation + 3000 * CameraForward, BoxShape, Camera->GetComponentRotation(),
-		UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Camera), false, IgnoredActors, 
-		EDrawDebugTrace::ForDuration, HitResults, true);
+		UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Camera), false, IgnoredActors,
+		EDrawDebugTrace::None, HitResults, true);
 	AActor* ClosestToCameraDirectionEnemy = nullptr;
 	double BestDotWithCameraForward = 0.f;
 	for (const auto& HitResult : HitResults)
 	{
-		if(APawn* FoundEnemy = Cast<APawn>(HitResult.GetActor()))
+		if (APawn* FoundEnemy = Cast<APawn>(HitResult.GetActor()))
 		{
 			FVector EnemyDirection = FoundEnemy->GetActorLocation() - CameraLocation;
 			EnemyDirection.Normalize();

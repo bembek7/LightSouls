@@ -72,6 +72,8 @@ private:
 	UFUNCTION()
 	void OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp);
 
+	void SnapCameraToTarget();
+
 public:
 
 protected:
