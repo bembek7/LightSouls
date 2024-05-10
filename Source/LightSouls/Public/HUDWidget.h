@@ -20,9 +20,15 @@ public:
 protected:
 	UFUNCTION(BlueprintPure)
 	float CalculateStaminaPercent() const;
+
+	UFUNCTION(BlueprintPure)
+	float CalculateHealthPercent() const;
 private:
 
 protected:
 	UPROPERTY(EditAnywhere, meta = (BindWidget))
 	class UProgressBar* StaminaBar;
+
+	UPROPERTY(EditAnywhere, meta = (BindWidget))
+	class UProgressBar* HealthBar;
 };

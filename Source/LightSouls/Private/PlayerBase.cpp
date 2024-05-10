@@ -42,6 +42,7 @@ APlayerBase::APlayerBase()
 	SwordCollider->SetBoxExtent(FVector(35, 3, 1));
 
 	CurrentStamina = MaxStamina;
+	CurrentHealth = MaxHealth;
 }
 
 void APlayerBase::BeginPlay()
@@ -126,6 +127,16 @@ float APlayerBase::GetCurrentStamina() const
 float APlayerBase::GetMaxStamina() const
 {
 	return MaxStamina;
+}
+
+float APlayerBase::GetCurrentHealth() const
+{
+	return CurrentHealth;
+}
+
+float APlayerBase::GetMaxHealth() const
+{
+	return MaxHealth;
 }
 
 void APlayerBase::EnemyDied(AActor* const DeadEnemy)

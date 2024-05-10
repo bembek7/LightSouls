@@ -27,6 +27,9 @@ public:
 	float GetCurrentStamina() const;
 	float GetMaxStamina() const;
 
+	float GetCurrentHealth() const;
+	float GetMaxHealth() const;
+
 	void EnemyDied(AActor* const DeadEnemy);
 
 protected:
@@ -138,6 +141,8 @@ private:
 
 	AActor* LockedTarget = nullptr;
 
+	float MaxHealth = 150.f;
+	float CurrentHealth;
 	float MaxStamina = 100.f;
 	float CurrentStamina;
 	float RollStaminaCost = 30.f;
