@@ -67,12 +67,27 @@ void APlayerBase::BeginPlay()
 	}
 }
 
+bool APlayerBase::IsLockedOnTarget() const
+{
+	return IsValid(LockedTarget);
+}
+
+float APlayerBase::GetMoveInputX() const
+{
+	return MoveVector.X;
+}
+
+float APlayerBase::GetMoveInputY() const
+{
+	return MoveVector.Y;
+}
+
 void APlayerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (LockedTarget)
 	{
-		SnapCameraToTarget();
+		RotatePlayerToTarget();
 	}
 }
 
@@ -283,20 +298,21 @@ void APlayerBase::LockCamera()
 
 		SpringArm->bUsePawnControlRotation = false;
 		SpringArm->bInheritPitch = false;
-		SpringArm->bInheritRoll = false;
-		SpringArm->bInheritYaw = false;
+		SpringArm->bInheritRoll = true;
+		SpringArm->bInheritYaw = true;
 		Camera->bUsePawnControlRotation = false;
 		Camera->AddRelativeRotation(FRotator(10, 0, 0));
 	}
 }
 
-void APlayerBase::SnapCameraToTarget()
+void APlayerBase::RotatePlayerToTarget()
 {
-	if (LockedTarget && Camera && SpringArm)
+	if (LockedTarget && SpringArm)
 	{
-		FRotator RotationToLookAtTarget = UKismetMathLibrary::FindLookAtRotation(SpringArm->GetComponentLocation(), LockedTarget->GetActorLocation());
-		RotationToLookAtTarget.Pitch -= 30;
-		SpringArm->SetRelativeRotation(RotationToLookAtTarget);
+		FRotator RotationToTarget = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), LockedTarget->GetActorLocation());
+		SpringArm->SetRelativeRotation(FRotator(RotationToTarget.Pitch - 40, 0, 0));
+		RotationToTarget.Pitch = 0;
+		SetActorRotation(RotationToTarget);
 	}
 }
 

@@ -36,6 +36,15 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintPure)
+	bool IsLockedOnTarget() const;
+
+	UFUNCTION(BlueprintPure)
+	float GetMoveInputX() const;
+
+	UFUNCTION(BlueprintPure)
+	float GetMoveInputY() const;
+
 private:
 	UFUNCTION()
 	void RegenerateStamina();
@@ -83,7 +92,7 @@ private:
 	UFUNCTION()
 	void OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp);
 
-	void SnapCameraToTarget();
+	void RotatePlayerToTarget();
 
 public:
 
