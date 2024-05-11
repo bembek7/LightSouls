@@ -72,6 +72,11 @@ bool APlayerBase::IsLockedOnTarget() const
 	return IsValid(LockedTarget);
 }
 
+bool APlayerBase::IsBlocking() const
+{
+	return bIsBlocking;
+}
+
 float APlayerBase::GetMoveInputX() const
 {
 	return MoveVector.X;
@@ -130,6 +135,11 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		if (IALockCamera)
 		{
 			PlayerEnhancedInputComponent->BindAction(IALockCamera, ETriggerEvent::Started, this, &APlayerBase::LockCameraInputResponse);
+		}
+		if (IABlock)
+		{
+			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Started, this, &APlayerBase::BlockingStarted);
+			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Completed, this, &APlayerBase::BlockingEnded);
 		}
 	}
 }
@@ -218,10 +228,19 @@ void APlayerBase::StartRoll()
 	{
 		PayStamina(RollStaminaCost);
 		bInRoll = true;
-		const float AnimLength = PlayAnimMontage(RollAnimMontage, RollAnimPlayRate) / RollAnimPlayRate;
+
+		const float AnimLength = RollAnimSequence->GetPlayLength() / RollAnimPlayRate;
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(RollAnimSequence, FName("AllSlot"), 0.25f, 0.25f, RollAnimPlayRate);
 		GetCharacterMovement()->StopMovementImmediately();
 
 		RollDirection = Camera->GetRightVector() * MoveVector.X + FVector::CrossProduct(Camera->GetRightVector(), FVector::ZAxisVector) * MoveVector.Y;
+
+		if(LockedTarget && SpringArm)
+		{
+			SpringArm->bInheritRoll = false;
+			SpringArm->bInheritYaw = false;
+			SetActorRotation(RollDirection.Rotation());
+		}
 
 		RollTimeline->SetTimelineLength(AnimLength - 0.1f);
 		RollTimeline->SetTimelineLengthMode(ETimelineLengthMode::TL_TimelineLength);
@@ -238,13 +257,18 @@ void APlayerBase::StartLightAttack()
 		bInAttack = true;
 		EnemiesHit.Empty();
 
-		const float AnimLength = PlayAnimMontage(LightAttackAnimMontage);
 		GetCharacterMovement()->StopMovementImmediately();
 
-		FTimerDelegate AttackDelegate;
-		AttackDelegate.BindUFunction(this, FName("AttackFinished"));
-		FTimerHandle AttackHandle;
-		GetWorldTimerManager().SetTimer(AttackHandle, AttackDelegate, AnimLength, false);
+		if(LightAttackAnimSequence)
+		{
+			const float AnimLength = LightAttackAnimSequence->GetPlayLength();
+			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(LightAttackAnimSequence, FName("AllSlot"));
+
+			FTimerDelegate AttackDelegate;
+			AttackDelegate.BindUFunction(this, FName("AttackFinished"));
+			FTimerHandle AttackHandle;
+			GetWorldTimerManager().SetTimer(AttackHandle, AttackDelegate, AnimLength, false);
+		}
 	}
 }
 
@@ -256,12 +280,38 @@ void APlayerBase::RollUpdate(const float RollForceMultiplier) const
 void APlayerBase::RollFinished()
 {
 	GetCharacterMovement()->StopMovementImmediately();
+	if (SpringArm)
+	{
+		SpringArm->bInheritRoll = true;
+		SpringArm->bInheritYaw = true;
+	}
+	
 	bInRoll = false;
 }
 
 void APlayerBase::AttackFinished()
 {
 	bInAttack = false;
+}
+
+void APlayerBase::BlockingStarted()
+{
+	bIsBlocking = true;
+	if (BlockingStartAnimSequence)
+	{
+		const float AnimLength = BlockingStartAnimSequence->GetPlayLength();
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingStartAnimSequence, FName("UpperSlot"));
+	}
+}
+
+void APlayerBase::BlockingEnded()
+{
+	bIsBlocking = false;
+	if (BlockingEndAnimSequence)
+	{
+		const float AnimLength = BlockingEndAnimSequence->GetPlayLength();
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingEndAnimSequence, FName("UpperSlot"));
+	}
 }
 
 void APlayerBase::LockCameraInputResponse()
@@ -283,8 +333,6 @@ void APlayerBase::UnlockCamera()
 		LockedTarget = nullptr;
 		SpringArm->bUsePawnControlRotation = true;
 		SpringArm->bInheritPitch = true;
-		SpringArm->bInheritRoll = true;
-		SpringArm->bInheritYaw = true;
 		Camera->bUsePawnControlRotation = true;
 	}
 }
@@ -298,8 +346,6 @@ void APlayerBase::LockCamera()
 
 		SpringArm->bUsePawnControlRotation = false;
 		SpringArm->bInheritPitch = false;
-		SpringArm->bInheritRoll = true;
-		SpringArm->bInheritYaw = true;
 		Camera->bUsePawnControlRotation = false;
 		Camera->AddRelativeRotation(FRotator(10, 0, 0));
 	}
@@ -310,9 +356,18 @@ void APlayerBase::RotatePlayerToTarget()
 	if (LockedTarget && SpringArm)
 	{
 		FRotator RotationToTarget = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), LockedTarget->GetActorLocation());
-		SpringArm->SetRelativeRotation(FRotator(RotationToTarget.Pitch - 40, 0, 0));
-		RotationToTarget.Pitch = 0;
-		SetActorRotation(RotationToTarget);
+		
+		if(bInRoll)
+		{
+			RotationToTarget.Pitch -= 40;
+			SpringArm->SetRelativeRotation(RotationToTarget);
+		}
+		else
+		{
+			SpringArm->SetRelativeRotation(FRotator(RotationToTarget.Pitch - 40, 0, 0));
+			RotationToTarget.Pitch = 0;
+			SetActorRotation(RotationToTarget);
+		}
 	}
 }
 

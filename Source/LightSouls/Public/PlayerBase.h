@@ -40,6 +40,9 @@ protected:
 	bool IsLockedOnTarget() const;
 
 	UFUNCTION(BlueprintPure)
+	bool IsBlocking() const;
+
+	UFUNCTION(BlueprintPure)
 	float GetMoveInputX() const;
 
 	UFUNCTION(BlueprintPure)
@@ -73,6 +76,12 @@ private:
 
 	UFUNCTION()
 	void AttackFinished();
+
+	UFUNCTION()
+	void BlockingStarted();
+
+	UFUNCTION()
+	void BlockingEnded();
 
 	UFUNCTION()
 	void LockCameraInputResponse();
@@ -115,6 +124,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
 	UInputAction* IALockCamera;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IABlock;
+
 	UPROPERTY(EditDefaultsOnly)
 	class UCameraComponent* Camera;
 
@@ -125,10 +137,16 @@ protected:
 	class UBoxComponent* SwordCollider;
 
 	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* RollAnimMontage;
+	UAnimSequence* RollAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* LightAttackAnimMontage;
+	UAnimSequence* LightAttackAnimSequence;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimSequence* BlockingStartAnimSequence;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimSequence* BlockingEndAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
 	float RollAnimPlayRate = 1.5f;
@@ -145,6 +163,7 @@ protected:
 private:
 	bool bInRoll = false;
 	bool bInAttack = false;
+	bool bIsBlocking = false;
 	FVector2D MoveVector;
 	FVector RollDirection;
 
