@@ -149,6 +149,9 @@ protected:
 	UAnimSequence* BlockingEndAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
+	class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
+
+	UPROPERTY(EditDefaultsOnly)
 	float RollAnimPlayRate = 1.5f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Roll")
