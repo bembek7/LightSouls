@@ -45,10 +45,10 @@ protected:
 	class UWidgetComponent* HealthBarInWorld;
 
 	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* HitImpactAnimMontage;
+	UAnimSequence* HitImpactAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
-	UAnimMontage* DeathAnimMontage;
+	UAnimSequence* DeathAnimSequence;
 
 private:
 	bool bIsDead = false;

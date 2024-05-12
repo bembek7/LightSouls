@@ -7,6 +7,7 @@
 #include "Particles\ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerBase.h"
+#include "EnemyControllerBase.h"
 
 // Sets default values
 AEnemyBase::AEnemyBase()
@@ -60,9 +61,17 @@ void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
 	}
 	else
 	{
-		if (HitImpactAnimMontage)
+		float HitImpactAnimLength = 0.f;
+		if (HitImpactAnimSequence)
 		{
-			PlayAnimMontage(HitImpactAnimMontage);
+			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(HitImpactAnimSequence, FName("AllSlot"));
+			HitImpactAnimLength = HitImpactAnimSequence->GetPlayLength();
+		}
+		if (AEnemyControllerBase* const EnemyController = Cast<AEnemyControllerBase>(GetController()))
+		{
+			EnemyController->StopBehaviour();
+			FTimerHandle RestartBehaviourHandle;
+			GetWorldTimerManager().SetTimer(RestartBehaviourHandle, [EnemyController]() {EnemyController->RestartBehaviour(); }, HitImpactAnimLength, false);
 		}
 	}
 
@@ -100,11 +109,15 @@ void AEnemyBase::Die()
 	bIsDead = true;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetGenerateOverlapEvents(false);
-	if (DeathAnimMontage)
+	if (DeathAnimSequence)
 	{
-		PlayAnimMontage(DeathAnimMontage);
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(DeathAnimSequence, FName("AllSlot"));
 	}
-	if(APlayerBase* const PlayerPawn = Cast<APlayerBase>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
+	if (AEnemyControllerBase* const EnemyController = Cast<AEnemyControllerBase>(GetController()))
+	{
+		EnemyController->StopBehaviour();
+	}
+	if (APlayerBase* const PlayerPawn = Cast<APlayerBase>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
 	{
 		PlayerPawn->EnemyDied(this);
 	}

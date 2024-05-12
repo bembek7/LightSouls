@@ -1,12 +1,28 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "EnemyControllerBase.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BrainComponent.h"
 
 AEnemyControllerBase::AEnemyControllerBase()
 {
 	AIPerception = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
+}
+
+void AEnemyControllerBase::StopBehaviour()
+{
+	if (UBrainComponent* const BrainComp = GetBrainComponent())
+	{
+		BrainComp->PauseLogic("Controlled pawn hit");
+	}
+}
+
+void AEnemyControllerBase::RestartBehaviour()
+{
+	if (UBrainComponent* const BrainComp = GetBrainComponent())
+	{
+		BrainComp->RestartLogic();
+	}
 }
 
 void AEnemyControllerBase::BeginPlay()

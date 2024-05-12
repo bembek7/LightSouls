@@ -7,7 +7,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "EnemyControllerBase.generated.h"
 /**
- * 
+ *
  */
 UCLASS()
 class LIGHTSOULS_API AEnemyControllerBase : public AAIController
@@ -16,6 +16,10 @@ class LIGHTSOULS_API AEnemyControllerBase : public AAIController
 
 public:
 	AEnemyControllerBase();
+
+	void StopBehaviour();
+
+	void RestartBehaviour();
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,7 +37,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	UAIPerceptionComponent* AIPerception;
-	
+
 private:
 	UBlackboardComponent* BlackboardComponent;
 };
