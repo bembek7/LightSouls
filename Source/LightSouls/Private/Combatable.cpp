@@ -95,7 +95,7 @@ void ACombatable::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 						AttackDamage = HeavyAttackDamage;
 					}
 				}
-				EnemyHit->Damage(AttackDamage, GetActorLocation());
+				EnemyHit->ActorHit(AttackDamage, GetActorLocation());
 				EnemiesHit.Add(EnemyHit);
 			}
 		}
@@ -120,16 +120,11 @@ void ACombatable::HitBlocked(float OriginalDamage)
 {
 	OriginalDamage -= BlockValue;
 	OriginalDamage = FMath::Max(0, OriginalDamage);
-	CurrentHealth -= OriginalDamage;
 	if (BlockedImpactAnimSequence)
 	{
 		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockedImpactAnimSequence, FName("AllSlot"));
 	}
-
-	if (CurrentHealth <= 0)
-	{
-		Die();
-	}
+	DamageActor(OriginalDamage);
 }
 
 float ACombatable::StartAttack(UAnimSequence* const AttackAnimSequence)
@@ -158,7 +153,7 @@ bool ACombatable::IsDead() const
 	return bIsDead;
 }
 
-void ACombatable::Damage(const float Damage, const FVector& HitterLocation)
+void ACombatable::ActorHit(const float Damage, const FVector& HitterLocation)
 {
 	const FVector HitterDirection = HitterLocation - GetActorLocation();
 	if (bIsBlocking && FVector::DotProduct(HitterDirection, GetActorForwardVector()) > 0)
@@ -167,18 +162,14 @@ void ACombatable::Damage(const float Damage, const FVector& HitterLocation)
 	}
 	else
 	{
-		CurrentHealth -= Damage;
 		if (HitImpactAnimSequence)
 		{
 			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(HitImpactAnimSequence, FName("AllSlot"));
 		}
+		DamageActor(Damage);
 		SpawnBlood(HitterLocation);
 	}
 
-	if (CurrentHealth <= 0)
-	{
-		Die();
-	}
 }
 
 void ACombatable::SpawnBlood(const FVector& HitterLocation)
@@ -199,6 +190,15 @@ void ACombatable::SpawnBlood(const FVector& HitterLocation)
 			FTimerHandle BloodDestructionHandle;
 			GetWorldTimerManager().SetTimer(BloodDestructionHandle, [BloodVFX]() {BloodVFX->Destroy(); }, 1.f, false);
 		}
+	}
+}
+
+void ACombatable::DamageActor(const float Damage)
+{
+	CurrentHealth -= Damage;
+	if (CurrentHealth <= 0)
+	{
+		Die();
 	}
 }
 

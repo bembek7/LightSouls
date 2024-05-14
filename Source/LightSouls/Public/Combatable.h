@@ -40,12 +40,13 @@ protected:
 	void EndBlocking();
 
 	virtual void Die();
-	virtual void Damage(const float Damage, const FVector& HitterLocation);
+	virtual void ActorHit(const float Damage, const FVector& HitterLocation);
 
 	virtual void HitBlocked(float OriginalDamage);
 private:
 	float StartAttack(UAnimSequence* const AttackAnimSequence);
 	void SpawnBlood(const FVector& HitterLocation);
+	void DamageActor(const float Damage);
 
 	UFUNCTION()
 	void OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp);

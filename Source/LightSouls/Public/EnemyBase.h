@@ -17,7 +17,7 @@ public:
 	float GetLightAttackRange() const;
 
 protected:
-	virtual void Damage(const float Damage, const FVector& HitterLocation) override;
+	virtual void ActorHit(const float Damage, const FVector& HitterLocation) override;
 	virtual void Die() override;
 
 	virtual void BeginPlay() override;

@@ -35,9 +35,9 @@ float AEnemyBase::GetLightAttackRange() const
 	return LightAttackRange;
 }
 
-void AEnemyBase::Damage(const float Damage, const FVector& HitterLocation)
+void AEnemyBase::ActorHit(const float Damage, const FVector& HitterLocation)
 {
-	Super::Damage(Damage, HitterLocation);
+	Super::ActorHit(Damage, HitterLocation);
 	if (!bIsDead)
 	{
 		if (AEnemyControllerBase* const EnemyController = Cast<AEnemyControllerBase>(GetController()))
