@@ -106,9 +106,13 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		{
 			PlayerEnhancedInputComponent->BindAction(IARoll, ETriggerEvent::Started, this, &APlayerBase::StartRoll);
 		}
-		if (IARoll)
+		if (IALightAttack)
 		{
 			PlayerEnhancedInputComponent->BindAction(IALightAttack, ETriggerEvent::Started, this, &APlayerBase::LightAttackInputResponse);
+		}
+		if (IAHeavyAttack)
+		{
+			PlayerEnhancedInputComponent->BindAction(IAHeavyAttack, ETriggerEvent::Started, this, &APlayerBase::HeavyAttackInputResponse);
 		}
 		if (IALockCamera)
 		{
@@ -223,6 +227,16 @@ void APlayerBase::LightAttackInputResponse()
 		PayStamina(LightAttackStaminaCost);
 
 		StartLightAttack();
+	}
+}
+
+void APlayerBase::HeavyAttackInputResponse()
+{
+	if (!IsInputBlocked() && HasEnoughStamina(HeavyAttackStaminaCost))
+	{
+		PayStamina(HeavyAttackStaminaCost);
+
+		StartHeavyAttack();
 	}
 }
 

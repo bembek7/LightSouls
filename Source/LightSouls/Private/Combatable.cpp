@@ -51,8 +51,8 @@ bool ACombatable::IsBlocking() const
 void ACombatable::AttackFinished()
 {
 	bInAttack = false;
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Attack finished!"));
+	bInLightAttack = false;
+	bInHeavyAttack = false;
 }
 
 void ACombatable::BlockingStarted()
@@ -81,13 +81,21 @@ void ACombatable::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 	{
 		if (ACombatable* const EnemyHit = Cast<ACombatable>(OtherActor))
 		{
-			if (GEngine)
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Collision!"));
 			if (!EnemiesHit.Contains(EnemyHit) && EnemyHit != this)
 			{
-				if (GEngine)
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Collision good!"));
-				EnemyHit->Damage(LightAttackDamage, GetActorLocation());
+				float AttackDamage = 0.f;
+				if (bInLightAttack)
+				{
+					AttackDamage = LightAttackDamage;
+				}
+				else
+				{
+					if (bInHeavyAttack)
+					{
+						AttackDamage = HeavyAttackDamage;
+					}
+				}
+				EnemyHit->Damage(AttackDamage, GetActorLocation());
 				EnemiesHit.Add(EnemyHit);
 			}
 		}
@@ -96,18 +104,30 @@ void ACombatable::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 
 float ACombatable::StartLightAttack()
 {
+	bInLightAttack = true;
+
+	return StartAttack(LightAttackAnimSequence);
+}
+
+float ACombatable::StartHeavyAttack()
+{
+	bInHeavyAttack = true;
+
+	return StartAttack(HeavyAttackAnimSequence);
+}
+
+float ACombatable::StartAttack(UAnimSequence* const AttackAnimSequence)
+{
 	bInAttack = true;
 	EnemiesHit.Empty();
 
 	GetCharacterMovement()->StopMovementImmediately();
 
 	float AnimLength = 0.f;
-	if (LightAttackAnimSequence)
+	if (AttackAnimSequence)
 	{
-		AnimLength = LightAttackAnimSequence->GetPlayLength();
-		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(LightAttackAnimSequence, FName("AllSlot"));
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Attack start!"));
+		AnimLength = AttackAnimSequence->GetPlayLength();
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(AttackAnimSequence, FName("AllSlot"));
 		FTimerDelegate AttackDelegate;
 		AttackDelegate.BindUFunction(this, FName("AttackFinished"));
 		FTimerHandle AttackHandle;

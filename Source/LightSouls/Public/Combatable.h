@@ -19,6 +19,7 @@ public:
 	float GetCurrentHealth() const;
 	float GetMaxHealth() const;
 	float StartLightAttack();
+	float StartHeavyAttack();
 
 	bool IsDead() const;
 
@@ -42,6 +43,7 @@ protected:
 	virtual void Damage(const float Damage, const FVector& HitterLocation);
 
 private:
+	float StartAttack(UAnimSequence* const AttackAnimSequence);
 	void SpawnBlood(const FVector& HitterLocation);
 
 	UFUNCTION()
@@ -90,5 +92,7 @@ private:
 
 	float CurrentHealth;
 
+	bool bInLightAttack = false;
+	bool bInHeavyAttack = false;
 	bool bIsBlocking = false;
 };

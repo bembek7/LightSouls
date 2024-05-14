@@ -62,6 +62,9 @@ private:
 	UFUNCTION(Category = "Input Response")
 	void LightAttackInputResponse();
 
+	UFUNCTION(Category = "Input Response")
+	void HeavyAttackInputResponse();
+
 	UFUNCTION()
 	void RollUpdate(const float RollForceMultiplier) const;
 
@@ -102,6 +105,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
 	UInputAction* IALightAttack;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
+	UInputAction* IAHeavyAttack;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Enhanced Input")
 	UInputAction* IALockCamera;
@@ -148,6 +154,7 @@ private:
 	float StaminaRegenerationPerSecond = 30.f;
 
 	float LightAttackStaminaCost = 25.f;
+	float HeavyAttackStaminaCost = 60.f;
 
 	FOnTimelineFloat RollInterp;
 	FOnTimelineEvent RollFinishedEvent;
