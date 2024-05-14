@@ -211,6 +211,4 @@ void ACombatable::Die()
 	{
 		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(DeathAnimSequence, FName("AllSlot"));
 	}
-	FTimerHandle DeathHandle;
-	GetWorldTimerManager().SetTimer(DeathHandle, [this]() {Destroy(); }, 5.f, false);
 }

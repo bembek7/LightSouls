@@ -80,6 +80,30 @@ void APlayerBase::HitBlocked(const float OriginalDamage)
 	Super::HitBlocked(OriginalDamage);
 }
 
+void APlayerBase::ActorHit(const float Damage, const FVector& HitterLocation)
+{
+	Super::ActorHit(Damage, HitterLocation);
+	if (!bIsDead)
+	{
+		const float TimeOutOfControl = (bIsBlocking) ? BlockedImpactAnimSequence->GetPlayLength() : HitImpactAnimSequence->GetPlayLength();
+		if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+		{
+			DisableInput(PlayerController);
+			FTimerHandle EnablingInputHandle;
+			GetWorldTimerManager().SetTimer(EnablingInputHandle, [this, PlayerController]() {if (PlayerController) { EnableInput(PlayerController); } }, TimeOutOfControl, false);
+		}
+	}
+}
+
+void APlayerBase::Die()
+{
+	Super::Die();
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PlayerController);
+	}
+}
+
 void APlayerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

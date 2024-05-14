@@ -60,4 +60,6 @@ void AEnemyBase::Die()
 	{
 		PlayerPawn->EnemyDied(this);
 	}
+	FTimerHandle DeathHandle;
+	GetWorldTimerManager().SetTimer(DeathHandle, [this]() {Destroy(); }, 5.f, false);
 }

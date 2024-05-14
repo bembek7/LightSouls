@@ -44,6 +44,8 @@ protected:
 
 	virtual void StartBlocking() override;
 	virtual void HitBlocked(const float OriginalDamage) override;
+	virtual void ActorHit(const float Damage, const FVector& HitterLocation) override;
+	virtual void Die() override;
 private:
 	UFUNCTION()
 	void RegenerateStamina();
