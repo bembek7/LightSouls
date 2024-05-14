@@ -57,21 +57,27 @@ void ACombatable::AttackFinished()
 
 void ACombatable::StartBlocking()
 {
-	bIsBlocking = true;
-	if (BlockingStartAnimSequence)
+	if (!bIsBlocking)
 	{
-		const float AnimLength = BlockingStartAnimSequence->GetPlayLength();
-		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingStartAnimSequence, FName("UpperSlot"));
+		bIsBlocking = true;
+		if (BlockingStartAnimSequence)
+		{
+			const float AnimLength = BlockingStartAnimSequence->GetPlayLength();
+			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingStartAnimSequence, FName("UpperSlot"));
+		}
 	}
 }
 
 void ACombatable::EndBlocking()
 {
-	bIsBlocking = false;
-	if (BlockingEndAnimSequence)
+	if(bIsBlocking)
 	{
-		const float AnimLength = BlockingEndAnimSequence->GetPlayLength();
-		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingEndAnimSequence, FName("UpperSlot"));
+		bIsBlocking = false;
+		if (BlockingEndAnimSequence)
+		{
+			const float AnimLength = BlockingEndAnimSequence->GetPlayLength();
+			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingEndAnimSequence, FName("UpperSlot"));
+		}
 	}
 }
 
@@ -129,6 +135,7 @@ void ACombatable::HitBlocked(float OriginalDamage)
 
 float ACombatable::StartAttack(UAnimSequence* const AttackAnimSequence)
 {
+	EndBlocking();
 	bInAttack = true;
 	EnemiesHit.Empty();
 

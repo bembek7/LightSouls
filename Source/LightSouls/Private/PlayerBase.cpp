@@ -241,6 +241,7 @@ void APlayerBase::StartRoll()
 {
 	if (!IsInputBlocked() && HasEnoughStamina(RollStaminaCost))
 	{
+		EndBlocking();
 		PayStamina(RollStaminaCost);
 		bInRoll = true;
 
