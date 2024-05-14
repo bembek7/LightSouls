@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "HealthBar.h"
-#include "EnemyBase.h"
+#include "Combatable.h"
 
 void UHealthBar::SetOwner(APawn* const NewOwner)
 {
@@ -10,7 +10,7 @@ void UHealthBar::SetOwner(APawn* const NewOwner)
 
 float UHealthBar::CalculateHealthPercent() const
 {
-	if (AEnemyBase* OwningPawn = Cast<AEnemyBase>(Owner))
+	if (ACombatable* OwningPawn = Cast<ACombatable>(Owner))
 	{
 		return OwningPawn->GetCurrentHealth() / OwningPawn->GetMaxHealth();
 	}

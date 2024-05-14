@@ -13,7 +13,7 @@ void AEnemyControllerBase::StopBehaviour()
 {
 	if (UBrainComponent* const BrainComp = GetBrainComponent())
 	{
-		BrainComp->PauseLogic("Controlled pawn hit");
+		BrainComp->StopLogic("Controlled pawn hit");
 	}
 }
 
