@@ -42,6 +42,8 @@ protected:
 	UFUNCTION(BlueprintPure)
 	float GetMoveInputY() const;
 
+	virtual void StartBlocking() override;
+	virtual void HitBlocked(const float OriginalDamage) override;
 private:
 	UFUNCTION()
 	void RegenerateStamina();
@@ -150,6 +152,7 @@ private:
 	float MaxStamina = 100.f;
 	float CurrentStamina;
 	float RollStaminaCost = 30.f;
+	float StaminaRequiredToBlock = 10.f;
 
 	float StaminaRegenerationPerSecond = 30.f;
 

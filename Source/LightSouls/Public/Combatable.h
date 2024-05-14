@@ -34,14 +34,15 @@ protected:
 	void AttackFinished();
 
 	UFUNCTION()
-	void BlockingStarted();
+	virtual void StartBlocking();
 
 	UFUNCTION()
-	void BlockingEnded();
+	void EndBlocking();
 
 	virtual void Die();
 	virtual void Damage(const float Damage, const FVector& HitterLocation);
 
+	virtual void HitBlocked(float OriginalDamage);
 private:
 	float StartAttack(UAnimSequence* const AttackAnimSequence);
 	void SpawnBlood(const FVector& HitterLocation);
@@ -59,12 +60,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	UAnimSequence* BlockingStartAnimSequence;
-
 	UPROPERTY(EditDefaultsOnly)
 	UAnimSequence* BlockingEndAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
 	UAnimSequence* HitImpactAnimSequence;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimSequence* BlockedImpactAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
 	UAnimSequence* DeathAnimSequence;
@@ -86,7 +89,7 @@ protected:
 
 	bool bInAttack = false;
 	bool bIsDead = false;
-
+	bool bIsBlocking = false;
 private:
 	TArray<AActor*>EnemiesHit;
 
@@ -94,5 +97,4 @@ private:
 
 	bool bInLightAttack = false;
 	bool bInHeavyAttack = false;
-	bool bIsBlocking = false;
 };

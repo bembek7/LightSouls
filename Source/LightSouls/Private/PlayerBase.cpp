@@ -65,12 +65,31 @@ float APlayerBase::GetMoveInputY() const
 	return MoveVector.Y;
 }
 
+void APlayerBase::StartBlocking()
+{
+	if (HasEnoughStamina(StaminaRequiredToBlock))
+	{
+		Super::StartBlocking();
+	}
+}
+
+void APlayerBase::HitBlocked(const float OriginalDamage)
+{
+	PayStamina(OriginalDamage);
+
+	Super::HitBlocked(OriginalDamage);
+}
+
 void APlayerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if (LockedTarget)
 	{
 		RotatePlayerToTarget();
+	}
+	if (bIsBlocking && !HasEnoughStamina(StaminaRequiredToBlock))
+	{
+		EndBlocking();
 	}
 }
 
@@ -120,8 +139,8 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		}
 		if (IABlock)
 		{
-			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Started, this, &APlayerBase::BlockingStarted);
-			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Completed, this, &APlayerBase::BlockingEnded);
+			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Started, this, &APlayerBase::StartBlocking);
+			PlayerEnhancedInputComponent->BindAction(IABlock, ETriggerEvent::Completed, this, &APlayerBase::EndBlocking);
 		}
 	}
 }

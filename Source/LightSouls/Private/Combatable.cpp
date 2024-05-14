@@ -55,7 +55,7 @@ void ACombatable::AttackFinished()
 	bInHeavyAttack = false;
 }
 
-void ACombatable::BlockingStarted()
+void ACombatable::StartBlocking()
 {
 	bIsBlocking = true;
 	if (BlockingStartAnimSequence)
@@ -65,7 +65,7 @@ void ACombatable::BlockingStarted()
 	}
 }
 
-void ACombatable::BlockingEnded()
+void ACombatable::EndBlocking()
 {
 	bIsBlocking = false;
 	if (BlockingEndAnimSequence)
@@ -116,6 +116,22 @@ float ACombatable::StartHeavyAttack()
 	return StartAttack(HeavyAttackAnimSequence);
 }
 
+void ACombatable::HitBlocked(float OriginalDamage)
+{
+	OriginalDamage -= BlockValue;
+	OriginalDamage = FMath::Max(0, OriginalDamage);
+	CurrentHealth -= OriginalDamage;
+	if (BlockedImpactAnimSequence)
+	{
+		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockedImpactAnimSequence, FName("AllSlot"));
+	}
+
+	if (CurrentHealth <= 0)
+	{
+		Die();
+	}
+}
+
 float ACombatable::StartAttack(UAnimSequence* const AttackAnimSequence)
 {
 	bInAttack = true;
@@ -144,10 +160,10 @@ bool ACombatable::IsDead() const
 
 void ACombatable::Damage(const float Damage, const FVector& HitterLocation)
 {
-	if (bIsBlocking)
+	const FVector HitterDirection = HitterLocation - GetActorLocation();
+	if (bIsBlocking && FVector::DotProduct(HitterDirection, GetActorForwardVector()) > 0)
 	{
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Block!"));
+		HitBlocked(Damage);
 	}
 	else
 	{
@@ -156,14 +172,13 @@ void ACombatable::Damage(const float Damage, const FVector& HitterLocation)
 		{
 			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(HitImpactAnimSequence, FName("AllSlot"));
 		}
+		SpawnBlood(HitterLocation);
 	}
-	
+
 	if (CurrentHealth <= 0)
 	{
 		Die();
 	}
-
-	SpawnBlood(HitterLocation);
 }
 
 void ACombatable::SpawnBlood(const FVector& HitterLocation)
