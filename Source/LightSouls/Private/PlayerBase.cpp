@@ -10,7 +10,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnemyBase.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Components/BoxComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
@@ -18,9 +17,6 @@
 // Sets default values
 APlayerBase::APlayerBase()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	AIPerceptionStimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("AI Perception Stimuli Source"));
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
@@ -36,16 +32,7 @@ APlayerBase::APlayerBase()
 	RollInterp.BindUFunction(this, FName("RollUpdate"));
 	RollFinishedEvent.BindUFunction(this, FName("RollFinished"));
 
-	SwordCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("Sword"));
-	SwordCollider->SetupAttachment(GetMesh(), FName("SwordJoint"));
-	SwordCollider->SetGenerateOverlapEvents(true);
-	SwordCollider->SetCollisionProfileName(FName("OverlapAll"));
-	SwordCollider->SetRelativeLocation(FVector(46, -20, 5));
-	SwordCollider->SetRelativeRotation(FRotator(4, -14, 0.2));
-	SwordCollider->SetBoxExtent(FVector(35, 3, 1));
-
 	CurrentStamina = MaxStamina;
-	CurrentHealth = MaxHealth;
 }
 
 void APlayerBase::BeginPlay()
@@ -61,23 +48,11 @@ void APlayerBase::BeginPlay()
 	FTimerDelegate StaminaRegenerationDelegate;
 	StaminaRegenerationDelegate.BindUFunction(this, FName("RegenerateStamina"));
 	GetWorldTimerManager().SetTimer(StaminaRegenerationHandle, StaminaRegenerationDelegate, 0.1f, true);
-
-	FScriptDelegate OnSwordHitDelegate;
-	OnSwordHitDelegate.BindUFunction(this, FName("OnSwordHit"));
-	if (SwordCollider)
-	{
-		SwordCollider->OnComponentBeginOverlap.AddUnique(OnSwordHitDelegate);
-	}
 }
 
 bool APlayerBase::IsLockedOnTarget() const
 {
 	return IsValid(LockedTarget);
-}
-
-bool APlayerBase::IsBlocking() const
-{
-	return bIsBlocking;
 }
 
 float APlayerBase::GetMoveInputX() const
@@ -133,7 +108,7 @@ void APlayerBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		}
 		if (IARoll)
 		{
-			PlayerEnhancedInputComponent->BindAction(IALightAttack, ETriggerEvent::Started, this, &APlayerBase::StartLightAttack);
+			PlayerEnhancedInputComponent->BindAction(IALightAttack, ETriggerEvent::Started, this, &APlayerBase::LightAttackInputResponse);
 		}
 		if (IALockCamera)
 		{
@@ -155,16 +130,6 @@ float APlayerBase::GetCurrentStamina() const
 float APlayerBase::GetMaxStamina() const
 {
 	return MaxStamina;
-}
-
-float APlayerBase::GetCurrentHealth() const
-{
-	return CurrentHealth;
-}
-
-float APlayerBase::GetMaxHealth() const
-{
-	return MaxHealth;
 }
 
 void APlayerBase::EnemyDied(AActor* const DeadEnemy)
@@ -238,7 +203,7 @@ void APlayerBase::StartRoll()
 
 		RollDirection = Camera->GetRightVector() * MoveVector.X + FVector::CrossProduct(Camera->GetRightVector(), FVector::ZAxisVector) * MoveVector.Y;
 
-		if(LockedTarget && SpringArm)
+		if (LockedTarget && SpringArm)
 		{
 			SpringArm->bInheritRoll = false;
 			SpringArm->bInheritYaw = false;
@@ -251,27 +216,13 @@ void APlayerBase::StartRoll()
 	}
 }
 
-void APlayerBase::StartLightAttack()
+void APlayerBase::LightAttackInputResponse()
 {
 	if (!IsInputBlocked() && HasEnoughStamina(LightAttackStaminaCost))
 	{
 		PayStamina(LightAttackStaminaCost);
 
-		bInAttack = true;
-		EnemiesHit.Empty();
-
-		GetCharacterMovement()->StopMovementImmediately();
-
-		if(LightAttackAnimSequence)
-		{
-			const float AnimLength = LightAttackAnimSequence->GetPlayLength();
-			GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(LightAttackAnimSequence, FName("AllSlot"));
-
-			FTimerDelegate AttackDelegate;
-			AttackDelegate.BindUFunction(this, FName("AttackFinished"));
-			FTimerHandle AttackHandle;
-			GetWorldTimerManager().SetTimer(AttackHandle, AttackDelegate, AnimLength, false);
-		}
+		StartLightAttack();
 	}
 }
 
@@ -288,33 +239,8 @@ void APlayerBase::RollFinished()
 		SpringArm->bInheritRoll = true;
 		SpringArm->bInheritYaw = true;
 	}
-	
+
 	bInRoll = false;
-}
-
-void APlayerBase::AttackFinished()
-{
-	bInAttack = false;
-}
-
-void APlayerBase::BlockingStarted()
-{
-	bIsBlocking = true;
-	if (BlockingStartAnimSequence)
-	{
-		const float AnimLength = BlockingStartAnimSequence->GetPlayLength();
-		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingStartAnimSequence, FName("UpperSlot"));
-	}
-}
-
-void APlayerBase::BlockingEnded()
-{
-	bIsBlocking = false;
-	if (BlockingEndAnimSequence)
-	{
-		const float AnimLength = BlockingEndAnimSequence->GetPlayLength();
-		GetMesh()->GetAnimInstance()->PlaySlotAnimationAsDynamicMontage(BlockingEndAnimSequence, FName("UpperSlot"));
-	}
 }
 
 void APlayerBase::LockCameraInputResponse()
@@ -359,8 +285,8 @@ void APlayerBase::RotatePlayerToTarget()
 	if (LockedTarget && SpringArm)
 	{
 		FRotator RotationToTarget = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), LockedTarget->GetActorLocation());
-		
-		if(bInRoll)
+
+		if (bInRoll)
 		{
 			RotationToTarget.Pitch -= 40;
 			SpringArm->SetRelativeRotation(RotationToTarget);
@@ -451,19 +377,4 @@ AActor* APlayerBase::GetClosestEnemy() const
 bool APlayerBase::IsInputBlocked() const
 {
 	return bInAttack || bInRoll;
-}
-
-void APlayerBase::OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp)
-{
-	if (bInAttack)
-	{
-		if (AEnemyBase* const EnemyHit = Cast<AEnemyBase>(OtherActor))
-		{
-			if (!EnemiesHit.Contains(EnemyHit))
-			{
-				EnemyHit->Damage(LightAttackDamage, GetActorLocation());
-				EnemiesHit.Add(EnemyHit);
-			}
-		}
-	}
 }

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "Combatable.h"
 #include "Components/TimelineComponent.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "PlayerBase.generated.h"
 
 UCLASS()
-class LIGHTSOULS_API APlayerBase : public ACharacter
+class LIGHTSOULS_API APlayerBase : public ACombatable
 {
 	GENERATED_BODY()
 
@@ -27,9 +27,6 @@ public:
 	float GetCurrentStamina() const;
 	float GetMaxStamina() const;
 
-	float GetCurrentHealth() const;
-	float GetMaxHealth() const;
-
 	void EnemyDied(AActor* const DeadEnemy);
 
 protected:
@@ -38,9 +35,6 @@ protected:
 
 	UFUNCTION(BlueprintPure)
 	bool IsLockedOnTarget() const;
-
-	UFUNCTION(BlueprintPure)
-	bool IsBlocking() const;
 
 	UFUNCTION(BlueprintPure)
 	float GetMoveInputX() const;
@@ -60,28 +54,19 @@ private:
 	void StartRoll();
 
 	UFUNCTION(Category = "Input Response")
-	void StartLightAttack();
-
-	UFUNCTION(Category = "Input Response")
 	void Walk(const FInputActionValue& IAValue);
 
 	UFUNCTION(Category = "Input Response")
 	void Look(const FInputActionValue& IAValue);
+
+	UFUNCTION(Category = "Input Response")
+	void LightAttackInputResponse();
 
 	UFUNCTION()
 	void RollUpdate(const float RollForceMultiplier) const;
 
 	UFUNCTION()
 	void RollFinished();
-
-	UFUNCTION()
-	void AttackFinished();
-
-	UFUNCTION()
-	void BlockingStarted();
-
-	UFUNCTION()
-	void BlockingEnded();
 
 	UFUNCTION()
 	void LockCameraInputResponse();
@@ -97,9 +82,6 @@ private:
 	AActor* GetClosestEnemy() const;
 
 	bool IsInputBlocked() const;
-
-	UFUNCTION()
-	void OnSwordHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp);
 
 	void RotatePlayerToTarget();
 
@@ -134,19 +116,7 @@ protected:
 	class USpringArmComponent* SpringArm;
 
 	UPROPERTY(EditDefaultsOnly)
-	class UBoxComponent* SwordCollider;
-
-	UPROPERTY(EditDefaultsOnly)
 	UAnimSequence* RollAnimSequence;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimSequence* LightAttackAnimSequence;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimSequence* BlockingStartAnimSequence;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimSequence* BlockingEndAnimSequence;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
@@ -165,15 +135,12 @@ protected:
 
 private:
 	bool bInRoll = false;
-	bool bInAttack = false;
-	bool bIsBlocking = false;
+
 	FVector2D MoveVector;
 	FVector RollDirection;
 
 	AActor* LockedTarget = nullptr;
 
-	float MaxHealth = 150.f;
-	float CurrentHealth;
 	float MaxStamina = 100.f;
 	float CurrentStamina;
 	float RollStaminaCost = 30.f;
@@ -181,8 +148,6 @@ private:
 	float StaminaRegenerationPerSecond = 30.f;
 
 	float LightAttackStaminaCost = 25.f;
-	float LightAttackDamage = 30.f;
-	TArray<AActor*>EnemiesHit;
 
 	FOnTimelineFloat RollInterp;
 	FOnTimelineEvent RollFinishedEvent;

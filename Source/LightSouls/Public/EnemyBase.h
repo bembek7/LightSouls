@@ -3,55 +3,32 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "Combatable.h"
 #include "EnemyBase.generated.h"
 
 UCLASS()
-class LIGHTSOULS_API AEnemyBase : public ACharacter
+class LIGHTSOULS_API AEnemyBase : public ACombatable
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AEnemyBase();
 
-	float GetCurrentHealth() const;
-	float GetMaxHealth() const;
-
-	void Damage(const float Damage, const FVector& HitterLocation);
-
-	bool IsDead() const;
+	float GetLightAttackRange() const;
 
 protected:
-	// Called when the game starts or when spawned
+	virtual void Damage(const float Damage, const FVector& HitterLocation) override;
+	virtual void Die() override;
+
 	virtual void BeginPlay() override;
-
-private:
-	void Die();
-	void SpawnBlood(const FVector& HitterLocation);
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget>HealthBarWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor>OnHitParticleEffectClass;
-
-	UPROPERTY(EditDefaultsOnly)
 	class UWidgetComponent* HealthBarInWorld;
 
 	UPROPERTY(EditDefaultsOnly)
-	UAnimSequence* HitImpactAnimSequence;
-
-	UPROPERTY(EditDefaultsOnly)
-	UAnimSequence* DeathAnimSequence;
-
-private:
-	bool bIsDead = false;
-	float MaxHealth = 100.f;
-	float CurrentHealth;
+	float LightAttackRange = 100.f;
 };
